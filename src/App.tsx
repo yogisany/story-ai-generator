@@ -83,7 +83,7 @@ export default function App() {
             </div>
             <div className="flex-1 overflow-hidden">
               <p className="text-sm font-bold truncate">{user.name}</p>
-              <p className="text-xs text-gray-400 truncate">Admin</p>
+              <p className="text-xs text-gray-400 truncate capitalize">{user.role}</p>
             </div>
           </div>
           <button 

@@ -27,6 +27,7 @@ interface User {
   email: string;
   phoneNumber?: string;
   avatarUrl?: string | null;
+  role: 'admin' | 'user';
   credits: number;
 }
 
