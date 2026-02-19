@@ -16,7 +16,11 @@ import { supabase } from './lib/supabase';
 
 export default function App() {
   const [view, setView] = useState<'dashboard' | 'wizard' | 'preview' | 'settings'>('dashboard');
-  const { currentBook, myBooks, user, setUser, brandSettings, fetchBooks } = useStore();
+  const { currentBook, myBooks, user, setUser, brandSettings, fetchBooks, fetchBrandSettings } = useStore();
+
+  useEffect(() => {
+    fetchBrandSettings();
+  }, [fetchBrandSettings]);
 
   useEffect(() => {
     if (user) {

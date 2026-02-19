@@ -49,11 +49,36 @@ export const ProfileSettings = () => {
     }
   };
 
-  const handleBrandSave = (e: React.FormEvent) => {
+  const handleBrandSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    updateBrand(brandData);
-    setIsSaved(true);
-    setTimeout(() => setIsSaved(false), 3000);
+    setIsLoading(true);
+    try {
+      // Save to Supabase
+      const { error } = await supabase
+        .from('brand_settings')
+        .upsert({
+          id: '00000000-0000-0000-0000-000000000000', // Use fixed ID for single row
+          name: brandData.name,
+          tagline: brandData.tagline,
+          logo_url: brandData.logoUrl,
+          updated_at: new Date().toISOString()
+        });
+
+      if (error) {
+        if (error.message.includes("relation") || error.code === "42P01") {
+           throw new Error("Tabel 'brand_settings' belum dibuat. Silakan jalankan script SQL di Supabase.");
+        }
+        throw error;
+      }
+
+      updateBrand(brandData);
+      setIsSaved(true);
+      setTimeout(() => setIsSaved(false), 3000);
+    } catch (err: any) {
+      alert(`Gagal menyimpan pengaturan brand: ${err.message}`);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const checkDatabase = async () => {

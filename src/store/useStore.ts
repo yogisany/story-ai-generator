@@ -52,6 +52,7 @@ interface StoryState {
   setCurrentBook: (book: Book | null) => void;
   setMyBooks: (books: Book[]) => void;
   fetchBooks: () => Promise<void>;
+  fetchBrandSettings: () => Promise<void>;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   
@@ -81,6 +82,30 @@ export const useStore = create<StoryState>((set, get) => ({
   setCurrentBook: (book) => set({ currentBook: book }),
   setMyBooks: (books) => set({ myBooks: books }),
   
+  fetchBrandSettings: async () => {
+    try {
+      const { data, error } = await supabase
+        .from('brand_settings')
+        .select('*')
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (data) {
+        set({
+          brandSettings: {
+            name: data.name,
+            tagline: data.tagline,
+            logoUrl: data.logo_url
+          }
+        });
+      }
+    } catch (err) {
+      // Ignore error if table doesn't exist yet, fallback to defaults
+      console.log("Brand settings not found or table missing");
+    }
+  },
+
   fetchBooks: async () => {
     const { user } = get();
     if (!user) return;
