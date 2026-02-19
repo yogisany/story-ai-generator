@@ -173,9 +173,20 @@ export const ProfileSettings = () => {
         </div>
         <button 
           onClick={checkDatabase}
-          className="px-4 py-2 bg-gray-100 text-gray-600 rounded-xl text-sm font-bold hover:bg-gray-200 transition-all"
+          className="px-4 py-2 bg-gray-100 text-gray-600 rounded-xl text-sm font-bold hover:bg-gray-200 transition-all mr-2"
         >
           Cek Koneksi Database
+        </button>
+        <button 
+          onClick={() => {
+            if (window.confirm('Ini akan menghapus semua data lokal. Lanjutkan?')) {
+              localStorage.clear();
+              window.location.reload();
+            }
+          }}
+          className="px-4 py-2 bg-red-50 text-red-500 rounded-xl text-sm font-bold hover:bg-red-100 transition-all"
+        >
+          Reset Data
         </button>
       </div>
 

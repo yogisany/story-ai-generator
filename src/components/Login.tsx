@@ -218,6 +218,17 @@ export const Login = () => {
 
         <div className="mt-8 text-center text-[10px] text-gray-400 uppercase tracking-widest">
           <p>© 2026 {brandSettings.name} • SDN Cimahi Mandiri 3</p>
+          <button 
+            onClick={() => {
+              if (window.confirm('Ini akan menghapus data login dan cache lokal untuk memperbaiki masalah error. Lanjutkan?')) {
+                localStorage.clear();
+                window.location.reload();
+              }
+            }}
+            className="mt-4 text-red-400 hover:text-red-500 underline cursor-pointer"
+          >
+            Reset Data Aplikasi (Fix Error)
+          </button>
         </div>
       </motion.div>
     </div>
