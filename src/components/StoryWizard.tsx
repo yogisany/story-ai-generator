@@ -121,6 +121,12 @@ export const StoryWizard = ({ onComplete }: { onComplete: () => void }) => {
         ))}
       </div>
 
+      {error && (
+        <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-2xl text-sm font-medium border border-red-100">
+          {error}
+        </div>
+      )}
+
       <AnimatePresence mode="wait">
         {step === 1 && (
           <motion.div

@@ -1,10 +1,11 @@
 import { GoogleGenAI, Type, ThinkingLevel, Modality } from "@google/genai";
 
-const apiKey = process.env.GEMINI_API_KEY;
+// Support both standard env var and Vite-prefixed var for flexibility
+const apiKey = process.env.GEMINI_API_KEY || import.meta.env.VITE_GEMINI_API_KEY;
 
 export const getGeminiClient = () => {
   if (!apiKey) {
-    throw new Error("GEMINI_API_KEY is not set");
+    throw new Error("GEMINI_API_KEY is not set. Please add it to your environment variables (e.g. in Netlify Site Settings).");
   }
   return new GoogleGenAI({ apiKey });
 };
