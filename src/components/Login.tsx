@@ -8,6 +8,7 @@ export const Login = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const setUser = useStore((state) => state.setUser);
+  const brandSettings = useStore((state) => state.brandSettings);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,11 +32,16 @@ export const Login = () => {
         className="max-w-md w-full bg-white rounded-[2.5rem] shadow-2xl p-10 border border-indigo-50"
       >
         <div className="text-center mb-10">
-          <div className="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-indigo-200 mx-auto mb-6">
-            <BookOpen size={32} />
+          <div className="w-24 h-24 bg-white rounded-2xl flex items-center justify-center overflow-hidden shadow-xl border border-gray-50 mx-auto mb-6">
+            <img 
+              src={brandSettings.logoUrl} 
+              alt="Logo" 
+              className="w-full h-full object-contain p-2"
+              referrerPolicy="no-referrer"
+            />
           </div>
-          <h1 className="text-3xl font-black text-gray-900 mb-2">StoryAI Admin</h1>
-          <p className="text-gray-500">Silakan masuk untuk mengelola buku cerita</p>
+          <h1 className="text-3xl font-black text-gray-900 mb-2">{brandSettings.name} <span className="text-indigo-600">{brandSettings.tagline}</span></h1>
+          <p className="text-gray-500">Admin Panel • SDN Cimahi Mandiri 3</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-6">

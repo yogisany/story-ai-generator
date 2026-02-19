@@ -1,6 +1,6 @@
 {
-  "name": "Kids Storybook Creator AI",
-  "description": "An AI-powered platform to create, illustrate, and narrate personalized children's storybooks.",
+  "name": "Kisah Ai by Erna",
+  "description": "Platform bertenaga AI untuk membuat, mengilustrasikan, dan menarasikan buku cerita anak-anak yang dipersonalisasi.",
   "requestFramePermissions": [
     "microphone"
   ]

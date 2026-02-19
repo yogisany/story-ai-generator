@@ -68,25 +68,41 @@ export const generateStory = async (params: {
   return JSON.parse(response.text || "{}");
 };
 
-export const generateIllustration = async (prompt: string) => {
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+export const generateIllustration = async (prompt: string, retries = 3) => {
   const ai = getGeminiClient();
   const fullPrompt = `Children's book illustration, cute cartoon style, bright colors, Disney-like aesthetic, high quality: ${prompt}`;
   
-  const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash-image",
-    contents: {
-      parts: [{ text: fullPrompt }],
-    },
-    config: {
-      imageConfig: {
-        aspectRatio: "1:1",
-      },
-    },
-  });
+  for (let i = 0; i <= retries; i++) {
+    try {
+      const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash-image",
+        contents: {
+          parts: [{ text: fullPrompt }],
+        },
+        config: {
+          imageConfig: {
+            aspectRatio: "1:1",
+          },
+        },
+      });
 
-  for (const part of response.candidates?.[0]?.content?.parts || []) {
-    if (part.inlineData) {
-      return `data:image/png;base64,${part.inlineData.data}`;
+      for (const part of response.candidates?.[0]?.content?.parts || []) {
+        if (part.inlineData) {
+          return `data:image/png;base64,${part.inlineData.data}`;
+        }
+      }
+      return null;
+    } catch (err: any) {
+      const isRateLimit = err?.message?.includes("429") || err?.status === "RESOURCE_EXHAUSTED";
+      if (isRateLimit && i < retries) {
+        const waitTime = Math.pow(2, i) * 2000 + Math.random() * 1000;
+        console.warn(`Rate limit hit, retrying in ${Math.round(waitTime)}ms... (Attempt ${i + 1}/${retries})`);
+        await sleep(waitTime);
+        continue;
+      }
+      throw err;
     }
   }
   return null;

@@ -5,16 +5,17 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { BookOpen, Plus, Library, Sparkles, LogOut, Settings } from 'lucide-react';
+import { BookOpen, Plus, Library, Sparkles, LogOut, Settings as SettingsIcon, User as UserIcon } from 'lucide-react';
 import { useStore } from './store/useStore';
 import { StoryWizard } from './components/StoryWizard';
 import { BookPreview } from './components/BookPreview';
 import { Login } from './components/Login';
+import { ProfileSettings } from './components/ProfileSettings';
 import { cn } from './lib/utils';
 
 export default function App() {
-  const [view, setView] = useState<'dashboard' | 'wizard' | 'preview'>('dashboard');
-  const { currentBook, myBooks, user, setUser } = useStore();
+  const [view, setView] = useState<'dashboard' | 'wizard' | 'preview' | 'settings'>('dashboard');
+  const { currentBook, myBooks, user, setUser, brandSettings } = useStore();
 
   if (!user) {
     return <Login />;
@@ -25,10 +26,18 @@ export default function App() {
       {/* Sidebar */}
       <aside className="fixed left-0 top-0 h-full w-64 bg-white border-r border-gray-100 p-6 flex flex-col z-20">
         <div className="flex items-center gap-3 mb-12 px-2">
-          <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-200">
-            <BookOpen size={24} />
+          <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center overflow-hidden shadow-md border border-gray-50">
+            <img 
+              src={brandSettings.logoUrl} 
+              alt="Logo" 
+              className="w-full h-full object-contain"
+              referrerPolicy="no-referrer"
+            />
           </div>
-          <span className="text-xl font-black tracking-tight text-indigo-900">StoryAI</span>
+          <div className="flex flex-col">
+            <span className="text-lg font-black tracking-tight text-indigo-900 leading-tight">{brandSettings.name}</span>
+            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{brandSettings.tagline}</span>
+          </div>
         </div>
 
         <nav className="space-y-2 flex-1">
@@ -39,7 +48,7 @@ export default function App() {
               view === 'dashboard' ? "bg-indigo-50 text-indigo-600" : "text-gray-500 hover:bg-gray-50"
             )}
           >
-            <Library size={20} /> Dashboard
+            <Library size={20} /> Beranda
           </button>
           <button 
             onClick={() => setView('wizard')}
@@ -48,16 +57,40 @@ export default function App() {
               view === 'wizard' ? "bg-indigo-50 text-indigo-600" : "text-gray-500 hover:bg-gray-50"
             )}
           >
-            <Plus size={20} /> Create New
+            <Plus size={20} /> Buat Baru
+          </button>
+          <button 
+            onClick={() => setView('settings')}
+            className={cn(
+              "w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all",
+              view === 'settings' ? "bg-indigo-50 text-indigo-600" : "text-gray-500 hover:bg-gray-50"
+            )}
+          >
+            <SettingsIcon size={20} /> Pengaturan
           </button>
         </nav>
 
         <div className="mt-auto pt-6 border-t border-gray-100">
+          <div className="flex items-center gap-3 px-2 mb-6">
+            <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white shadow-sm bg-gray-100">
+              {user.avatarUrl ? (
+                <img src={user.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-gray-300">
+                  <UserIcon size={20} />
+                </div>
+              )}
+            </div>
+            <div className="flex-1 overflow-hidden">
+              <p className="text-sm font-bold truncate">{user.name}</p>
+              <p className="text-xs text-gray-400 truncate">Admin</p>
+            </div>
+          </div>
           <button 
             onClick={() => setUser(null)}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-red-500 hover:bg-red-50 transition-all"
           >
-            <LogOut size={20} /> Logout
+            <LogOut size={20} /> Keluar
           </button>
         </div>
       </aside>
@@ -75,14 +108,14 @@ export default function App() {
             >
               <div className="flex justify-between items-end">
                 <div>
-                  <h1 className="text-4xl font-black text-gray-900 mb-2">My Storybooks</h1>
-                  <p className="text-gray-500">Welcome back! You have {myBooks.length} stories in your library.</p>
+                  <h1 className="text-4xl font-black text-gray-900 mb-2">Buku Ceritaku</h1>
+                  <p className="text-gray-500">Selamat datang kembali! Kamu memiliki {myBooks.length} cerita di perpustakaanmu.</p>
                 </div>
                 <button 
                   onClick={() => setView('wizard')}
                   className="px-6 py-3 bg-indigo-600 text-white rounded-2xl font-bold flex items-center gap-2 hover:bg-indigo-700 shadow-lg shadow-indigo-100 transition-all"
                 >
-                  <Plus size={20} /> Create New Story
+                  <Plus size={20} /> Buat Cerita Baru
                 </button>
               </div>
 
@@ -91,13 +124,13 @@ export default function App() {
                   <div className="w-24 h-24 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-6 text-indigo-500">
                     <Sparkles size={48} />
                   </div>
-                  <h3 className="text-2xl font-bold text-gray-800 mb-2">No stories yet</h3>
-                  <p className="text-gray-500 mb-8 max-w-sm mx-auto">Start your first adventure and let AI help you create a magical storybook for your kids.</p>
+                  <h3 className="text-2xl font-bold text-gray-800 mb-2">Belum ada cerita</h3>
+                  <p className="text-gray-500 mb-8 max-w-sm mx-auto">Mulai petualangan pertamamu dan biarkan AI membantumu membuat buku cerita ajaib untuk anak-anak.</p>
                   <button 
                     onClick={() => setView('wizard')}
                     className="px-8 py-4 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-all"
                   >
-                    Create Your First Story
+                    Buat Cerita Pertamamu
                   </button>
                 </div>
               ) : (
@@ -121,12 +154,12 @@ export default function App() {
                           </div>
                         )}
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-6">
-                          <span className="text-white font-bold flex items-center gap-2">Read Story <Plus size={16} /></span>
+                          <span className="text-white font-bold flex items-center gap-2">Baca Cerita <Plus size={16} /></span>
                         </div>
                       </div>
                       <div className="p-6">
                         <h3 className="text-xl font-bold text-gray-900 mb-1 truncate">{book.title}</h3>
-                        <p className="text-sm text-gray-500 mb-4">{book.pages.length} Pages • {book.targetAge} Years</p>
+                        <p className="text-sm text-gray-500 mb-4">{book.pages.length} Halaman • {book.targetAge} Tahun</p>
                         <div className="flex gap-2">
                           <span className="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full text-xs font-bold uppercase tracking-wider">{book.theme}</span>
                         </div>
@@ -162,10 +195,21 @@ export default function App() {
                   onClick={() => setView('dashboard')}
                   className="text-gray-500 hover:text-indigo-600 font-medium flex items-center gap-2 transition-all"
                 >
-                  ← Back to Dashboard
+                  ← Kembali ke Beranda
                 </button>
               </div>
               <BookPreview />
+            </motion.div>
+          )}
+
+          {view === 'settings' && (
+            <motion.div
+              key="settings"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+            >
+              <ProfileSettings />
             </motion.div>
           )}
         </AnimatePresence>

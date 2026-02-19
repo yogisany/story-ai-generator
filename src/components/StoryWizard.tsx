@@ -90,14 +90,14 @@ export const StoryWizard = ({ onComplete }: { onComplete: () => void }) => {
               <div className="p-3 bg-indigo-100 rounded-2xl text-indigo-600">
                 <Sparkles size={24} />
               </div>
-              <h2 className="text-2xl font-bold text-gray-800">What's the story about?</h2>
+              <h2 className="text-2xl font-bold text-gray-800">Ceritanya tentang apa?</h2>
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Story Theme</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Tema Cerita</label>
               <textarea
                 className="w-full p-4 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                placeholder="e.g. A brave little dragon who wants to fly to the moon..."
+                placeholder="misal: Seekor naga kecil pemberani yang ingin terbang ke bulan..."
                 value={formData.theme}
                 onChange={(e) => setFormData({ ...formData, theme: e.target.value })}
                 rows={3}
@@ -105,13 +105,13 @@ export const StoryWizard = ({ onComplete }: { onComplete: () => void }) => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Main Character Name</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Nama Karakter Utama</label>
               <div className="relative">
                 <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
                 <input
                   type="text"
                   className="w-full pl-12 pr-4 py-3 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 outline-none"
-                  placeholder="e.g. Budi, Luna, Sparky"
+                  placeholder="misal: Budi, Luna, Sparky"
                   value={formData.characterName}
                   onChange={(e) => setFormData({ ...formData, characterName: e.target.value })}
                 />
@@ -123,7 +123,7 @@ export const StoryWizard = ({ onComplete }: { onComplete: () => void }) => {
               disabled={!formData.theme || !formData.characterName}
               className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-indigo-700 disabled:opacity-50 transition-all"
             >
-              Next Step <ArrowRight size={20} />
+              Langkah Selanjutnya <ArrowRight size={20} />
             </button>
           </motion.div>
         )}
@@ -140,11 +140,11 @@ export const StoryWizard = ({ onComplete }: { onComplete: () => void }) => {
               <div className="p-3 bg-pink-100 rounded-2xl text-pink-600">
                 <Target size={24} />
               </div>
-              <h2 className="text-2xl font-bold text-gray-800">Target Audience & Moral</h2>
+              <h2 className="text-2xl font-bold text-gray-800">Target Audiens & Pesan Moral</h2>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Age Group</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Kelompok Usia</label>
               <div className="grid grid-cols-3 gap-3">
                 {['3-5', '6-8', '9-12'].map((age) => (
                   <button
@@ -157,18 +157,18 @@ export const StoryWizard = ({ onComplete }: { onComplete: () => void }) => {
                         : "bg-white border-gray-200 text-gray-600 hover:border-pink-200"
                     )}
                   >
-                    {age} Years
+                    {age} Tahun
                   </button>
                 ))}
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Moral Lesson</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Pesan Moral</label>
               <input
                 type="text"
                 className="w-full px-4 py-3 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-pink-500 outline-none"
-                placeholder="e.g. Honesty, Kindness, Courage"
+                placeholder="misal: Kejujuran, Kebaikan, Keberanian"
                 value={formData.moral}
                 onChange={(e) => setFormData({ ...formData, moral: e.target.value })}
               />
@@ -179,13 +179,13 @@ export const StoryWizard = ({ onComplete }: { onComplete: () => void }) => {
                 onClick={handleBack}
                 className="flex-1 py-4 bg-gray-100 text-gray-600 rounded-2xl font-bold hover:bg-gray-200 transition-all"
               >
-                Back
+                Kembali
               </button>
               <button
                 onClick={handleNext}
                 className="flex-[2] py-4 bg-pink-600 text-white rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-pink-700 transition-all"
               >
-                Next Step <ArrowRight size={20} />
+                Langkah Selanjutnya <ArrowRight size={20} />
               </button>
             </div>
           </motion.div>
@@ -203,11 +203,11 @@ export const StoryWizard = ({ onComplete }: { onComplete: () => void }) => {
               <div className="p-3 bg-amber-100 rounded-2xl text-amber-600">
                 <BookOpen size={24} />
               </div>
-              <h2 className="text-2xl font-bold text-gray-800">Final Details</h2>
+              <h2 className="text-2xl font-bold text-gray-800">Detail Akhir</h2>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Language</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Bahasa</label>
               <select
                 className="w-full px-4 py-3 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-amber-500 outline-none"
                 value={formData.language}
@@ -220,7 +220,7 @@ export const StoryWizard = ({ onComplete }: { onComplete: () => void }) => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Number of Pages</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Jumlah Halaman</label>
               <input
                 type="range"
                 min="5"
@@ -230,7 +230,7 @@ export const StoryWizard = ({ onComplete }: { onComplete: () => void }) => {
                 value={formData.pages}
                 onChange={(e) => setFormData({ ...formData, pages: parseInt(e.target.value) })}
               />
-              <div className="text-center font-bold text-amber-600 mt-2">{formData.pages} Pages</div>
+              <div className="text-center font-bold text-amber-600 mt-2">{formData.pages} Halaman</div>
             </div>
 
             <div className="flex gap-3">
@@ -238,7 +238,7 @@ export const StoryWizard = ({ onComplete }: { onComplete: () => void }) => {
                 onClick={handleBack}
                 className="flex-1 py-4 bg-gray-100 text-gray-600 rounded-2xl font-bold hover:bg-gray-200 transition-all"
               >
-                Back
+                Kembali
               </button>
               <button
                 onClick={handleGenerate}
@@ -248,12 +248,12 @@ export const StoryWizard = ({ onComplete }: { onComplete: () => void }) => {
                 {isLoading ? (
                   <>
                     <Loader2 className="animate-spin" size={20} />
-                    Magic in progress...
+                    Sihir sedang bekerja...
                   </>
                 ) : (
                   <>
                     <Wand2 size={20} />
-                    Create My Story!
+                    Buat Ceritaku!
                   </>
                 )}
               </button>

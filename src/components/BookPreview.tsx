@@ -37,6 +37,8 @@ export const BookPreview = () => {
         if (url) {
           updatePage(page.id, { illustrationUrl: url });
         }
+        // Small delay between successful generations to avoid hitting rate limits too fast
+        await new Promise(resolve => setTimeout(resolve, 1000));
       } catch (err) {
         console.error(`Failed to generate image for page ${page.pageNumber}:`, err);
       }
@@ -213,7 +215,7 @@ export const BookPreview = () => {
               </>
             ) : (
               <>
-                <Sparkles size={20} /> Generate All Images
+                <Sparkles size={20} /> Buat Semua Gambar
               </>
             )}
           </button>
@@ -221,7 +223,7 @@ export const BookPreview = () => {
             onClick={exportToPDF}
             className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-all"
           >
-            <Download size={20} /> Export PDF
+            <Download size={20} /> Ekspor PDF
           </button>
         </div>
       </div>
@@ -251,7 +253,7 @@ export const BookPreview = () => {
                 )}
                 <h2 className="text-5xl font-black mb-4 tracking-tight leading-tight">{currentBook.title}</h2>
                 <div className="px-6 py-2 bg-white/20 rounded-full text-sm font-bold uppercase tracking-widest">
-                  A Story for {currentBook.targetAge} Years Old
+                  Cerita untuk Anak Usia {currentBook.targetAge} Tahun
                 </div>
               </motion.div>
             ) : (
@@ -284,14 +286,14 @@ export const BookPreview = () => {
                       <div className="w-32 h-32 bg-indigo-100 rounded-full flex items-center justify-center mx-auto text-indigo-500">
                         <ImageIcon size={48} />
                       </div>
-                      <p className="text-gray-500 font-medium">No illustration yet</p>
+                      <p className="text-gray-500 font-medium">Belum ada ilustrasi</p>
                       <button 
                         onClick={() => handleGenerateImage(currentPage - 1)}
                         disabled={isGeneratingImg}
                         className="px-6 py-3 bg-indigo-600 text-white rounded-xl font-bold flex items-center gap-2 hover:bg-indigo-700 disabled:opacity-50"
                       >
                         {isGeneratingImg ? <Loader2 className="animate-spin" size={20} /> : <Wand2 size={20} />}
-                        Generate Illustration
+                        Buat Ilustrasi
                       </button>
                     </div>
                   )}
@@ -300,7 +302,7 @@ export const BookPreview = () => {
                 {/* Text Side */}
                 <div className="flex-1 p-12 flex flex-col justify-center bg-white">
                   <div className="flex justify-between items-start mb-6">
-                    <span className="text-sm font-bold text-indigo-500 uppercase tracking-widest">Page {currentPage}</span>
+                    <span className="text-sm font-bold text-indigo-500 uppercase tracking-widest">Halaman {currentPage}</span>
                     <button 
                       onClick={() => handleNarration(currentPage - 1)}
                       disabled={isNarrating}
@@ -344,7 +346,7 @@ export const BookPreview = () => {
             currentPage === 0 ? "border-indigo-500 scale-105 shadow-lg" : "border-transparent opacity-60 hover:opacity-100"
           )}
         >
-          <div className="w-full h-full bg-indigo-600 flex items-center justify-center text-white text-[10px] font-bold">COVER</div>
+          <div className="w-full h-full bg-indigo-600 flex items-center justify-center text-white text-[10px] font-bold">SAMPUL</div>
         </button>
         {currentBook.pages.map((p, i) => (
           <button 

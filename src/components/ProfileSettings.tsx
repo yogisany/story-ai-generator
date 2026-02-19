@@ -1,0 +1,266 @@
+import React, { useState, useRef } from 'react';
+import { motion } from 'motion/react';
+import { User, Mail, Phone, Camera, Save, CheckCircle2, Layout, Image as ImageIcon, Type } from 'lucide-react';
+import { useStore } from '../store/useStore';
+
+export const ProfileSettings = () => {
+  const { user, updateUser, brandSettings, updateBrand } = useStore();
+  const [activeTab, setActiveTab] = useState<'profile' | 'brand'>('profile');
+  
+  const [profileData, setProfileData] = useState({
+    name: user?.name || '',
+    email: user?.email || '',
+    phoneNumber: user?.phoneNumber || '',
+    avatarUrl: user?.avatarUrl || ''
+  });
+
+  const [brandData, setBrandData] = useState({
+    name: brandSettings.name,
+    tagline: brandSettings.tagline,
+    logoUrl: brandSettings.logoUrl
+  });
+
+  const [isSaved, setIsSaved] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
+
+  const handleProfileSave = (e: React.FormEvent) => {
+    e.preventDefault();
+    updateUser(profileData);
+    setIsSaved(true);
+    setTimeout(() => setIsSaved(false), 3000);
+  };
+
+  const handleBrandSave = (e: React.FormEvent) => {
+    e.preventDefault();
+    updateBrand(brandData);
+    setIsSaved(true);
+    setTimeout(() => setIsSaved(false), 3000);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'avatar' | 'logo') => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (type === 'avatar') {
+          setProfileData({ ...profileData, avatarUrl: reader.result as string });
+        } else {
+          setBrandData({ ...brandData, logoUrl: reader.result as string });
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  return (
+    <div className="max-w-2xl mx-auto py-8">
+      <div className="mb-8">
+        <h1 className="text-3xl font-black text-gray-900 mb-2">Pengaturan</h1>
+        <p className="text-gray-500">Kelola informasi profil dan identitas brand Anda</p>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex gap-2 mb-8 bg-white p-2 rounded-2xl shadow-sm border border-gray-100">
+        <button
+          onClick={() => setActiveTab('profile')}
+          className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold transition-all ${
+            activeTab === 'profile' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100' : 'text-gray-500 hover:bg-gray-50'
+          }`}
+        >
+          <User size={20} /> Profil User
+        </button>
+        <button
+          onClick={() => setActiveTab('brand')}
+          className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold transition-all ${
+            activeTab === 'brand' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100' : 'text-gray-500 hover:bg-gray-50'
+          }`}
+        >
+          <Layout size={20} /> Identitas Brand
+        </button>
+      </div>
+
+      <div className="bg-white rounded-[2.5rem] shadow-xl border border-gray-100 overflow-hidden">
+        <div className="p-10">
+          {activeTab === 'profile' ? (
+            <form onSubmit={handleProfileSave} className="space-y-8">
+              {/* Avatar Upload */}
+              <div className="flex flex-col items-center">
+                <div className="relative group">
+                  <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-indigo-50 shadow-lg bg-gray-100">
+                    {profileData.avatarUrl ? (
+                      <img src={profileData.avatarUrl} alt="Profile" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-gray-300">
+                        <User size={64} />
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => avatarInputRef.current?.click()}
+                    className="absolute bottom-0 right-0 p-3 bg-indigo-600 text-white rounded-full shadow-lg hover:bg-indigo-700 transition-all scale-90 group-hover:scale-100"
+                  >
+                    <Camera size={20} />
+                  </button>
+                  <input
+                    type="file"
+                    ref={avatarInputRef}
+                    onChange={(e) => handleFileChange(e, 'avatar')}
+                    className="hidden"
+                    accept="image/*"
+                  />
+                </div>
+                <p className="mt-4 text-sm font-medium text-gray-500">Klik ikon kamera untuk ganti foto profil</p>
+              </div>
+
+              <div className="grid grid-cols-1 gap-6">
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2 ml-1">Nama Lengkap</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                    <input
+                      type="text"
+                      className="w-full pl-12 pr-4 py-4 rounded-2xl border border-gray-100 focus:ring-2 focus:ring-indigo-500 outline-none transition-all bg-gray-50/50"
+                      value={profileData.name}
+                      onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
+                      placeholder="Masukkan nama lengkap"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2 ml-1">Alamat Email</label>
+                  <div className="relative">
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                    <input
+                      type="email"
+                      className="w-full pl-12 pr-4 py-4 rounded-2xl border border-gray-100 focus:ring-2 focus:ring-indigo-500 outline-none transition-all bg-gray-50/50"
+                      value={profileData.email}
+                      onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
+                      placeholder="Masukkan alamat email"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2 ml-1">Nomor HP</label>
+                  <div className="relative">
+                    <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                    <input
+                      type="tel"
+                      className="w-full pl-12 pr-4 py-4 rounded-2xl border border-gray-100 focus:ring-2 focus:ring-indigo-500 outline-none transition-all bg-gray-50/50"
+                      value={profileData.phoneNumber}
+                      onChange={(e) => setProfileData({ ...profileData, phoneNumber: e.target.value })}
+                      placeholder="Masukkan nomor HP"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-4">
+                <button
+                  type="submit"
+                  className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold text-lg hover:bg-indigo-700 shadow-lg shadow-indigo-100 transition-all flex items-center justify-center gap-2"
+                >
+                  {isSaved ? (
+                    <>
+                      <CheckCircle2 size={24} />
+                      Berhasil Disimpan
+                    </>
+                  ) : (
+                    <>
+                      <Save size={24} />
+                      Simpan Profil
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          ) : (
+            <form onSubmit={handleBrandSave} className="space-y-8">
+              {/* Logo Upload */}
+              <div className="flex flex-col items-center">
+                <div className="relative group">
+                  <div className="w-32 h-32 rounded-2xl overflow-hidden border-4 border-indigo-50 shadow-lg bg-white p-4">
+                    {brandData.logoUrl ? (
+                      <img src={brandData.logoUrl} alt="Logo" className="w-full h-full object-contain" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-gray-300">
+                        <ImageIcon size={64} />
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => logoInputRef.current?.click()}
+                    className="absolute bottom-0 right-0 p-3 bg-indigo-600 text-white rounded-full shadow-lg hover:bg-indigo-700 transition-all scale-90 group-hover:scale-100"
+                  >
+                    <Camera size={20} />
+                  </button>
+                  <input
+                    type="file"
+                    ref={logoInputRef}
+                    onChange={(e) => handleFileChange(e, 'logo')}
+                    className="hidden"
+                    accept="image/*"
+                  />
+                </div>
+                <p className="mt-4 text-sm font-medium text-gray-500">Klik ikon kamera untuk ganti logo brand</p>
+              </div>
+
+              <div className="grid grid-cols-1 gap-6">
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2 ml-1">Nama Brand</label>
+                  <div className="relative">
+                    <Type className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                    <input
+                      type="text"
+                      className="w-full pl-12 pr-4 py-4 rounded-2xl border border-gray-100 focus:ring-2 focus:ring-indigo-500 outline-none transition-all bg-gray-50/50"
+                      value={brandData.name}
+                      onChange={(e) => setBrandData({ ...brandData, name: e.target.value })}
+                      placeholder="Masukkan nama brand"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2 ml-1">Tagline / Sub-teks</label>
+                  <div className="relative">
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                    <input
+                      type="text"
+                      className="w-full pl-12 pr-4 py-4 rounded-2xl border border-gray-100 focus:ring-2 focus:ring-indigo-500 outline-none transition-all bg-gray-50/50"
+                      value={brandData.tagline}
+                      onChange={(e) => setBrandData({ ...brandData, tagline: e.target.value })}
+                      placeholder="misal: by Erna"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-4">
+                <button
+                  type="submit"
+                  className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold text-lg hover:bg-indigo-700 shadow-lg shadow-indigo-100 transition-all flex items-center justify-center gap-2"
+                >
+                  {isSaved ? (
+                    <>
+                      <CheckCircle2 size={24} />
+                      Berhasil Disimpan
+                    </>
+                  ) : (
+                    <>
+                      <Save size={24} />
+                      Simpan Identitas Brand
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
