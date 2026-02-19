@@ -66,19 +66,102 @@ export const ProfileSettings = () => {
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'avatar' | 'logo') => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, type: 'avatar' | 'logo') => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        if (type === 'avatar') {
-          setProfileData({ ...profileData, avatarUrl: reader.result as string });
+    if (!file) return;
+
+    try {
+      // 1. Resize image first
+      const resizedBase64 = await resizeImage(file);
+      
+      if (type === 'avatar') {
+        setIsLoading(true);
+        
+        // 2. Convert base64 to Blob for upload
+        const res = await fetch(resizedBase64);
+        const blob = await res.blob();
+        
+        // 3. Upload to Supabase Storage
+        const fileName = `${user?.id || 'unknown'}-${Date.now()}.jpg`;
+        const { error: uploadError } = await supabase.storage
+          .from('avatars')
+          .upload(fileName, blob, {
+            contentType: 'image/jpeg',
+            upsert: true
+          });
+
+        if (uploadError) {
+          console.warn("Upload failed, falling back to local base64:", uploadError);
+          if (uploadError.message.includes("bucket")) {
+             alert("Gagal upload: Bucket 'avatars' tidak ditemukan. Silakan buat Public Bucket bernama 'avatars' di Supabase Storage.");
+          }
+          // Fallback: use base64 locally
+          setProfileData({ ...profileData, avatarUrl: resizedBase64 });
         } else {
-          setBrandData({ ...brandData, logoUrl: reader.result as string });
+          // 4. Get Public URL
+          const { data: { publicUrl } } = supabase.storage
+            .from('avatars')
+            .getPublicUrl(fileName);
+          
+          // 5. Update State & DB immediately
+          setProfileData({ ...profileData, avatarUrl: publicUrl });
+          
+          if (user) {
+            // Update profiles table
+            await supabase.from('profiles').update({ avatar_url: publicUrl }).eq('id', user.id);
+            // Update auth metadata
+            await supabase.auth.updateUser({ data: { avatar_url: publicUrl } });
+            // Update local store
+            updateUser({ avatarUrl: publicUrl });
+          }
         }
-      };
-      reader.readAsDataURL(file);
+      } else {
+        // For Brand Logo (keep as base64 for now or implement similar logic)
+        setBrandData({ ...brandData, logoUrl: resizedBase64 });
+      }
+    } catch (error: any) {
+      console.error("Error processing image:", error);
+      alert(`Gagal memproses gambar: ${error.message}`);
+    } finally {
+      setIsLoading(false);
     }
+  };
+
+  const resizeImage = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 200; // Limit to 200px
+          const MAX_HEIGHT = 200;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', 0.7)); // Compress to 70% quality JPEG
+        };
+        img.onerror = reject;
+      };
+      reader.onerror = reject;
+    });
   };
 
   return (
