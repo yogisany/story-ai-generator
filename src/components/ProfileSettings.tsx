@@ -1,11 +1,13 @@
 import React, { useState, useRef } from 'react';
 import { motion } from 'motion/react';
-import { User, Mail, Phone, Camera, Save, CheckCircle2, Layout, Image as ImageIcon, Type } from 'lucide-react';
+import { User, Mail, Phone, Camera, Save, CheckCircle2, Layout, Image as ImageIcon, Type, Loader2 } from 'lucide-react';
 import { useStore } from '../store/useStore';
+import { supabase } from '../lib/supabase';
 
 export const ProfileSettings = () => {
   const { user, updateUser, brandSettings, updateBrand } = useStore();
   const [activeTab, setActiveTab] = useState<'profile' | 'brand'>('profile');
+  const [isLoading, setIsLoading] = useState(false);
   
   const [profileData, setProfileData] = useState({
     name: user?.name || '',
@@ -24,11 +26,27 @@ export const ProfileSettings = () => {
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
 
-  const handleProfileSave = (e: React.FormEvent) => {
+  const handleProfileSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    updateUser(profileData);
-    setIsSaved(true);
-    setTimeout(() => setIsSaved(false), 3000);
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        data: { 
+          full_name: profileData.name,
+          phone: profileData.phoneNumber,
+          avatar_url: profileData.avatarUrl
+        }
+      });
+      if (error) throw error;
+
+      updateUser(profileData);
+      setIsSaved(true);
+      setTimeout(() => setIsSaved(false), 3000);
+    } catch (err: any) {
+      alert(err.message || 'Gagal memperbarui profil');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleBrandSave = (e: React.FormEvent) => {
@@ -161,9 +179,12 @@ export const ProfileSettings = () => {
               <div className="pt-4">
                 <button
                   type="submit"
-                  className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold text-lg hover:bg-indigo-700 shadow-lg shadow-indigo-100 transition-all flex items-center justify-center gap-2"
+                  disabled={isLoading}
+                  className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold text-lg hover:bg-indigo-700 shadow-lg shadow-indigo-100 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                 >
-                  {isSaved ? (
+                  {isLoading ? (
+                    <Loader2 className="animate-spin" size={24} />
+                  ) : isSaved ? (
                     <>
                       <CheckCircle2 size={24} />
                       Berhasil Disimpan

@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { BookOpen, Lock, User as UserIcon, AlertCircle, Mail, ArrowRight } from 'lucide-react';
+import { BookOpen, Lock, User as UserIcon, AlertCircle, Mail, ArrowRight, Loader2 } from 'lucide-react';
 import { useStore } from '../store/useStore';
+import { supabase } from '../lib/supabase';
 
 export const Login = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [role, setRole] = useState<'admin' | 'user'>('user');
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -16,51 +18,65 @@ export const Login = () => {
   const setUser = useStore((state) => state.setUser);
   const brandSettings = useStore((state) => state.brandSettings);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setIsLoading(true);
 
-    if (isLogin) {
-      // Mock Login Logic
-      if (role === 'admin') {
-        if (formData.username === 'admin' && formData.password === 'admin123') {
-          setUser({
-            id: 'admin-id',
-            name: 'Administrator',
-            email: 'admin@storybook.ai',
-            role: 'admin',
-            credits: 9999
-          });
-        } else {
-          setError('Username atau password admin salah!');
-        }
-      } else {
-        // Mock User Login
-        if (formData.username && formData.password) {
-          setUser({
-            id: 'user-id',
-            name: formData.username,
-            email: `${formData.username}@example.com`,
-            role: 'user',
-            credits: 10
-          });
-        } else {
-          setError('Silakan isi username dan password!');
-        }
-      }
-    } else {
-      // Mock Sign Up Logic
-      if (formData.username && formData.password && formData.email && formData.name) {
-        setUser({
-          id: Math.random().toString(36).substr(2, 9),
-          name: formData.name,
-          email: formData.email,
-          role: role,
-          credits: role === 'admin' ? 9999 : 10
+    try {
+      if (isLogin) {
+        // Supabase Login
+        const { data, error: authError } = await supabase.auth.signInWithPassword({
+          email: formData.email || `${formData.username}@example.com`,
+          password: formData.password,
         });
+
+        if (authError) throw authError;
+
+        if (data.user) {
+          // In a real app, you'd fetch the role from a profiles table
+          // For now, we'll use the role selected in the UI or check metadata
+          const userRole = data.user.user_metadata?.role || role;
+          
+          setUser({
+            id: data.user.id,
+            name: data.user.user_metadata?.full_name || data.user.email?.split('@')[0] || 'User',
+            email: data.user.email || '',
+            role: userRole,
+            credits: userRole === 'admin' ? 9999 : 10,
+            avatarUrl: data.user.user_metadata?.avatar_url
+          });
+        }
       } else {
-        setError('Silakan lengkapi semua data pendaftaran!');
+        // Supabase Sign Up
+        const { data, error: authError } = await supabase.auth.signUp({
+          email: formData.email,
+          password: formData.password,
+          options: {
+            data: {
+              full_name: formData.name,
+              username: formData.username,
+              role: role,
+            }
+          }
+        });
+
+        if (authError) throw authError;
+
+        if (data.user) {
+          setUser({
+            id: data.user.id,
+            name: formData.name,
+            email: formData.email,
+            role: role,
+            credits: role === 'admin' ? 9999 : 10
+          });
+        }
       }
+    } catch (err: any) {
+      setError(err.message || 'Terjadi kesalahan saat autentikasi');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -137,43 +153,26 @@ export const Login = () => {
                   placeholder="Nama Lengkap"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  required
                 />
               </div>
             </motion.div>
           )}
 
           <div>
-            <label className="block text-xs font-bold text-gray-400 mb-1 ml-1 uppercase tracking-wider">Username</label>
+            <label className="block text-xs font-bold text-gray-400 mb-1 ml-1 uppercase tracking-wider">Email</label>
             <div className="relative">
-              <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
               <input
-                type="text"
+                type="email"
                 className="w-full pl-12 pr-4 py-3 rounded-2xl border border-gray-100 focus:ring-2 focus:ring-indigo-500 outline-none transition-all bg-gray-50/50"
-                placeholder="Username"
-                value={formData.username}
-                onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                placeholder="email@example.com"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                required
               />
             </div>
           </div>
-
-          {!isLogin && (
-            <motion.div
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-            >
-              <label className="block text-xs font-bold text-gray-400 mb-1 ml-1 uppercase tracking-wider">Email</label>
-              <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                <input
-                  type="email"
-                  className="w-full pl-12 pr-4 py-3 rounded-2xl border border-gray-100 focus:ring-2 focus:ring-indigo-500 outline-none transition-all bg-gray-50/50"
-                  placeholder="email@example.com"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                />
-              </div>
-            </motion.div>
-          )}
 
           <div>
             <label className="block text-xs font-bold text-gray-400 mb-1 ml-1 uppercase tracking-wider">Password</label>
@@ -185,16 +184,24 @@ export const Login = () => {
                 placeholder="••••••••"
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                required
               />
             </div>
           </div>
 
           <button
             type="submit"
-            className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold text-lg hover:bg-indigo-700 shadow-lg shadow-indigo-100 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+            disabled={isLoading}
+            className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold text-lg hover:bg-indigo-700 shadow-lg shadow-indigo-100 transition-all active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-50"
           >
-            {isLogin ? 'Masuk Sekarang' : 'Daftar Sekarang'}
-            <ArrowRight size={20} />
+            {isLoading ? (
+              <Loader2 className="animate-spin" size={24} />
+            ) : (
+              <>
+                {isLogin ? 'Masuk Sekarang' : 'Daftar Sekarang'}
+                <ArrowRight size={20} />
+              </>
+            )}
           </button>
         </form>
 

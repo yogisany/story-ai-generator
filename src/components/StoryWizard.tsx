@@ -4,6 +4,7 @@ import { Sparkles, User, Target, BookOpen, ArrowRight, Loader2, Wand2 } from 'lu
 import { generateStory, generateIllustration } from '../lib/gemini';
 import { useStore } from '../store/useStore';
 import { cn } from '../lib/utils';
+import { supabase } from '../lib/supabase';
 
 export const StoryWizard = ({ onComplete }: { onComplete: () => void }) => {
   const [step, setStep] = useState(1);
@@ -16,12 +17,16 @@ export const StoryWizard = ({ onComplete }: { onComplete: () => void }) => {
     pages: 8
   });
   
-  const { setLoading, setCurrentBook, setError, isLoading } = useStore();
+  const { setLoading, setCurrentBook, setError, isLoading, user } = useStore();
 
   const handleNext = () => setStep(s => s + 1);
   const handleBack = () => setStep(s => s - 1);
 
   const handleGenerate = async () => {
+    if (!user) {
+      setError("Silakan login terlebih dahulu.");
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -30,33 +35,57 @@ export const StoryWizard = ({ onComplete }: { onComplete: () => void }) => {
         pages: formData.pages
       });
 
-      const bookId = crypto.randomUUID();
-      
-      // Generate Cover
-      const coverUrl = await generateIllustration(storyData.coverPrompt);
+      // 1. Save Book to Supabase
+      const { data: book, error: bookError } = await supabase
+        .from('books')
+        .insert({
+          user_id: user.id,
+          title: storyData.title,
+          theme: formData.theme,
+          target_age: formData.age,
+          moral: formData.moral,
+          cover_prompt: storyData.coverPrompt,
+          character_description: storyData.characterDescription
+        })
+        .select()
+        .single();
 
-      const newBook = {
-        id: bookId,
-        title: storyData.title,
-        theme: formData.theme,
-        targetAge: formData.age,
-        moral: formData.moral,
+      if (bookError) throw bookError;
+
+      // 2. Generate Cover (Optional, can be done after insert)
+      const coverUrl = await generateIllustration(storyData.coverPrompt);
+      if (coverUrl) {
+        await supabase.from('books').update({ cover_url: coverUrl }).eq('id', book.id);
+      }
+
+      // 3. Save Pages to Supabase
+      const pagesToInsert = storyData.pages.map((p: any) => ({
+        book_id: book.id,
+        page_number: p.pageNumber,
+        content: p.content,
+        illustration_prompt: p.illustrationPrompt
+      }));
+
+      const { data: pages, error: pagesError } = await supabase
+        .from('pages')
+        .insert(pagesToInsert)
+        .select();
+
+      if (pagesError) throw pagesError;
+
+      const fullBook = {
+        ...book,
         coverUrl,
-        coverPrompt: storyData.coverPrompt,
-        characterDescription: storyData.characterDescription,
-        pages: storyData.pages.map((p: any) => ({
-          id: crypto.randomUUID(),
-          pageNumber: p.pageNumber,
-          content: p.content,
-          illustrationPrompt: p.illustrationPrompt,
+        pages: pages.map((p: any) => ({
+          ...p,
           illustrationUrl: null
         }))
       };
 
-      setCurrentBook(newBook);
+      setCurrentBook(fullBook);
       onComplete();
-    } catch (err) {
-      setError("Failed to generate story. Please try again.");
+    } catch (err: any) {
+      setError(err.message || "Failed to generate story. Please try again.");
       console.error(err);
     } finally {
       setLoading(false);

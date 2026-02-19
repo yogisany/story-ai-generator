@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { supabase } from '../lib/supabase';
 
 interface Page {
   id: string;
@@ -50,6 +51,7 @@ interface StoryState {
   updateBrand: (updates: Partial<BrandSettings>) => void;
   setCurrentBook: (book: Book | null) => void;
   setMyBooks: (books: Book[]) => void;
+  fetchBooks: () => Promise<void>;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   
@@ -57,7 +59,7 @@ interface StoryState {
   updatePage: (pageId: string, updates: Partial<Page>) => void;
 }
 
-export const useStore = create<StoryState>((set) => ({
+export const useStore = create<StoryState>((set, get) => ({
   user: null,
   brandSettings: {
     name: 'Kisah Ai',
@@ -78,6 +80,30 @@ export const useStore = create<StoryState>((set) => ({
   })),
   setCurrentBook: (book) => set({ currentBook: book }),
   setMyBooks: (books) => set({ myBooks: books }),
+  
+  fetchBooks: async () => {
+    const { user } = get();
+    if (!user) return;
+    
+    set({ isLoading: true });
+    try {
+      const { data: books, error: booksError } = await supabase
+        .from('books')
+        .select(`
+          *,
+          pages (*)
+        `)
+        .order('created_at', { ascending: false });
+
+      if (booksError) throw booksError;
+      set({ myBooks: books || [] });
+    } catch (err: any) {
+      set({ error: err.message });
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
   setLoading: (loading) => set({ isLoading: loading }),
   setError: (error) => set({ error }),
   

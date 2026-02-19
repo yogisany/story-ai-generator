@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { BookOpen, Plus, Library, Sparkles, LogOut, Settings as SettingsIcon, User as UserIcon } from 'lucide-react';
 import { useStore } from './store/useStore';
@@ -12,10 +12,58 @@ import { BookPreview } from './components/BookPreview';
 import { Login } from './components/Login';
 import { ProfileSettings } from './components/ProfileSettings';
 import { cn } from './lib/utils';
+import { supabase } from './lib/supabase';
 
 export default function App() {
   const [view, setView] = useState<'dashboard' | 'wizard' | 'preview' | 'settings'>('dashboard');
-  const { currentBook, myBooks, user, setUser, brandSettings } = useStore();
+  const { currentBook, myBooks, user, setUser, brandSettings, fetchBooks } = useStore();
+
+  useEffect(() => {
+    if (user) {
+      fetchBooks();
+    }
+  }, [user, fetchBooks]);
+
+  useEffect(() => {
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        const userRole = session.user.user_metadata?.role || 'user';
+        setUser({
+          id: session.user.id,
+          name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'User',
+          email: session.user.email || '',
+          role: userRole,
+          credits: userRole === 'admin' ? 9999 : 10,
+          avatarUrl: session.user.user_metadata?.avatar_url
+        });
+      }
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        const userRole = session.user.user_metadata?.role || 'user';
+        setUser({
+          id: session.user.id,
+          name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'User',
+          email: session.user.email || '',
+          role: userRole,
+          credits: userRole === 'admin' ? 9999 : 10,
+          avatarUrl: session.user.user_metadata?.avatar_url
+        });
+      } else {
+        setUser(null);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [setUser]);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+  };
 
   if (!user) {
     return <Login />;
@@ -87,7 +135,7 @@ export default function App() {
             </div>
           </div>
           <button 
-            onClick={() => setUser(null)}
+            onClick={handleLogout}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-red-500 hover:bg-red-50 transition-all"
           >
             <LogOut size={20} /> Keluar
