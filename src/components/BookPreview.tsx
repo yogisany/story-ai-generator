@@ -74,11 +74,17 @@ export const BookPreview = () => {
     const page = currentBook.pages[pageIndex];
     setIsNarrating(true);
     try {
-      const url = await generateNarration(page.content);
+      let url = page.narrationUrl;
+      if (!url) {
+        url = await generateNarration(page.content);
+        if (url) {
+          updatePage(page.id, { narrationUrl: url });
+        }
+      }
+      
       if (url) {
-        updatePage(page.id, { narrationUrl: url });
         const audio = new Audio(url);
-        audio.play();
+        audio.play().catch(e => console.error("Audio play failed:", e));
       }
     } catch (err) {
       console.error(err);
@@ -88,34 +94,14 @@ export const BookPreview = () => {
   };
 
   const exportToPDF = async () => {
-    console.log("Exporting PDF started...");
+    console.log("Exporting multi-page PDF started...");
     if (!currentBook) {
       console.error("No current book found");
-      return;
-    }
-    const element = document.getElementById('book-content');
-    if (!element) {
-      console.error("Element #book-content not found");
-      alert("Elemen buku tidak ditemukan!");
       return;
     }
 
     setLoading(true);
     try {
-      console.log("Capturing canvas...");
-      // Tunggu sebentar agar render stabil
-      await new Promise(resolve => setTimeout(resolve, 800));
-
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-        logging: true // Enable logging for debugging
-      });
-      
-      console.log("Canvas captured, generating PDF...");
-      const imgData = canvas.toDataURL('image/jpeg', 0.95);
       const doc = new jsPDF({
         orientation: 'p',
         unit: 'mm',
@@ -124,28 +110,84 @@ export const BookPreview = () => {
 
       const pageWidth = doc.internal.pageSize.getWidth();
       const pageHeight = doc.internal.pageSize.getHeight();
-      
-      // Hitung rasio agar gambar pas di halaman A4
-      const imgWidth = pageWidth;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-      // Jika gambar lebih tinggi dari halaman, sesuaikan
-      let finalHeight = imgHeight;
-      let yPos = 0;
-      
-      if (imgHeight > pageHeight) {
-        finalHeight = pageHeight;
-        // Opsional: bisa buat multiple pages di sini, tapi untuk sekarang kita fit-kan saja
-      } else {
-        // Center vertically
-        yPos = (pageHeight - imgHeight) / 2;
+      // Create a hidden container for rendering pages
+      const container = document.createElement('div');
+      container.style.position = 'fixed';
+      container.style.left = '-9999px';
+      container.style.top = '0';
+      container.style.width = '800px'; 
+      document.body.appendChild(container);
+
+      const renderPageToCanvas = async (html: string) => {
+        const pageEl = document.createElement('div');
+        pageEl.innerHTML = html;
+        pageEl.style.backgroundColor = 'white';
+        pageEl.style.padding = '40px';
+        pageEl.style.display = 'flex';
+        pageEl.style.flexDirection = 'column';
+        pageEl.style.alignItems = 'center';
+        pageEl.style.justifyContent = 'center';
+        pageEl.style.minHeight = '1100px';
+        container.appendChild(pageEl);
+        
+        const images = pageEl.getElementsByTagName('img');
+        await Promise.all(Array.from(images).map(img => {
+          if (img.complete) return Promise.resolve();
+          return new Promise(resolve => { img.onload = resolve; img.onerror = resolve; });
+        }));
+
+        const canvas = await html2canvas(pageEl, {
+          scale: 2,
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: '#ffffff',
+          logging: false
+        });
+        
+        container.removeChild(pageEl);
+        return canvas;
+      };
+
+      // 1. Render Cover
+      const coverHtml = `
+        <div style="width: 100%; text-align: center; background: linear-gradient(to bottom right, #6366f1, #9333ea); color: white; padding: 60px; border-radius: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;">
+          ${currentBook.coverUrl ? `<img src="${currentBook.coverUrl}" style="width: 80%; border-radius: 20px; margin-bottom: 30px; border: 8px solid rgba(255,255,255,0.2);" />` : ''}
+          <h1 style="font-size: 48px; font-weight: 900; margin-bottom: 20px; font-family: sans-serif;">${currentBook.title}</h1>
+          <div style="font-size: 18px; font-weight: bold; text-transform: uppercase; font-family: sans-serif;">A Story for ${currentBook.targetAge} Years Old</div>
+        </div>
+      `;
+      const coverCanvas = await renderPageToCanvas(coverHtml);
+      const coverImg = coverCanvas.toDataURL('image/jpeg', 0.95);
+      doc.addImage(coverImg, 'JPEG', 0, 0, pageWidth, pageHeight);
+
+      // 2. Render Each Page
+      for (let i = 0; i < currentBook.pages.length; i++) {
+        const page = currentBook.pages[i];
+        doc.addPage();
+        
+        const pageHtml = `
+          <div style="width: 100%; display: flex; flex-direction: column; gap: 30px; align-items: center;">
+            <div style="width: 100%; aspect-ratio: 1/1; overflow: hidden; border-radius: 20px;">
+              ${page.illustrationUrl ? `<img src="${page.illustrationUrl}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 20px;" />` : '<div style="width: 100%; height: 100%; background: #f3f4f6;"></div>'}
+            </div>
+            <div style="padding: 20px; text-align: center;">
+              <div style="color: #6366f1; font-weight: bold; margin-bottom: 15px; text-transform: uppercase; font-family: sans-serif;">Page ${i + 1}</div>
+              <p style="font-size: 24px; line-height: 1.6; color: #1f2937; font-family: serif;">${page.content}</p>
+            </div>
+          </div>
+        `;
+        
+        const pageCanvas = await renderPageToCanvas(pageHtml);
+        const pageImg = pageCanvas.toDataURL('image/jpeg', 0.95);
+        doc.addImage(pageImg, 'JPEG', 0, 0, pageWidth, pageHeight);
       }
 
-      doc.addImage(imgData, 'JPEG', 0, yPos, imgWidth, finalHeight);
       doc.save(`${currentBook.title}.pdf`);
+      document.body.removeChild(container);
     } catch (err) {
-      console.error("PDF Export Error:", err);
-      alert("Gagal mengekspor PDF. Pastikan semua gambar sudah ter-generate.");
+      console.error("Multi-page PDF Export Error:", err);
+      alert("Gagal mengekspor PDF.");
     } finally {
       setLoading(false);
     }
