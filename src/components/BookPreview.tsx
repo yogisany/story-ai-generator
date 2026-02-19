@@ -88,23 +88,64 @@ export const BookPreview = () => {
   };
 
   const exportToPDF = async () => {
-    const doc = new jsPDF('p', 'mm', 'a4');
+    console.log("Exporting PDF started...");
+    if (!currentBook) {
+      console.error("No current book found");
+      return;
+    }
     const element = document.getElementById('book-content');
-    if (!element) return;
+    if (!element) {
+      console.error("Element #book-content not found");
+      alert("Elemen buku tidak ditemukan!");
+      return;
+    }
 
     setLoading(true);
     try {
-      // Simple PDF generation: one page at a time
-      // For a real app, we'd loop through all pages and render them off-screen
-      const canvas = await html2canvas(element);
-      const imgData = canvas.toDataURL('image/png');
-      const imgProps = doc.getImageProperties(imgData);
-      const pdfWidth = doc.internal.pageSize.getWidth();
-      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-      doc.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      console.log("Capturing canvas...");
+      // Tunggu sebentar agar render stabil
+      await new Promise(resolve => setTimeout(resolve, 800));
+
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        logging: true // Enable logging for debugging
+      });
+      
+      console.log("Canvas captured, generating PDF...");
+      const imgData = canvas.toDataURL('image/jpeg', 0.95);
+      const doc = new jsPDF({
+        orientation: 'p',
+        unit: 'mm',
+        format: 'a4'
+      });
+
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      
+      // Hitung rasio agar gambar pas di halaman A4
+      const imgWidth = pageWidth;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      // Jika gambar lebih tinggi dari halaman, sesuaikan
+      let finalHeight = imgHeight;
+      let yPos = 0;
+      
+      if (imgHeight > pageHeight) {
+        finalHeight = pageHeight;
+        // Opsional: bisa buat multiple pages di sini, tapi untuk sekarang kita fit-kan saja
+      } else {
+        // Center vertically
+        yPos = (pageHeight - imgHeight) / 2;
+      }
+
+      doc.addImage(imgData, 'JPEG', 0, yPos, imgWidth, finalHeight);
       doc.save(`${currentBook.title}.pdf`);
     } catch (err) {
-      console.error(err);
+      console.error("PDF Export Error:", err);
+      alert("Gagal mengekspor PDF. Pastikan semua gambar sudah ter-generate.");
     } finally {
       setLoading(false);
     }
@@ -191,7 +232,7 @@ export const BookPreview = () => {
                       />
                       <button 
                         onClick={() => handleGenerateImage(currentPage - 1)}
-                        className="absolute bottom-4 right-4 p-3 bg-white/90 backdrop-blur rounded-xl shadow-lg text-indigo-600 opacity-0 group-hover/img:opacity-100 transition-all hover:scale-110"
+                        className="absolute bottom-4 right-4 p-3 bg-white rounded-xl shadow-lg text-indigo-600 opacity-0 group-hover/img:opacity-100 transition-all hover:scale-110"
                       >
                         <RefreshCw size={20} />
                       </button>
@@ -239,14 +280,14 @@ export const BookPreview = () => {
         <button 
           onClick={handlePrev}
           disabled={currentPage === 0}
-          className="absolute left-4 top-1/2 -translate-y-1/2 p-4 bg-white/90 backdrop-blur rounded-full shadow-xl text-gray-800 hover:scale-110 disabled:opacity-0 transition-all z-10"
+          className="absolute left-4 top-1/2 -translate-y-1/2 p-4 bg-white rounded-full shadow-xl text-gray-800 hover:scale-110 disabled:opacity-0 transition-all z-10"
         >
           <ChevronLeft size={32} />
         </button>
         <button 
           onClick={handleNext}
           disabled={currentPage === totalPages}
-          className="absolute right-4 top-1/2 -translate-y-1/2 p-4 bg-white/90 backdrop-blur rounded-full shadow-xl text-gray-800 hover:scale-110 disabled:opacity-0 transition-all z-10"
+          className="absolute right-4 top-1/2 -translate-y-1/2 p-4 bg-white rounded-full shadow-xl text-gray-800 hover:scale-110 disabled:opacity-0 transition-all z-10"
         >
           <ChevronRight size={32} />
         </button>
