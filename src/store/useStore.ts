@@ -57,6 +57,7 @@ interface StoryState {
   setError: (error: string | null) => void;
   
   addBook: (book: Book) => void;
+  updateBook: (bookId: string, updates: Partial<Book>) => void;
   updatePage: (pageId: string, updates: Partial<Page>) => void;
 }
 
@@ -133,6 +134,19 @@ export const useStore = create<StoryState>((set, get) => ({
   setError: (error) => set({ error }),
   
   addBook: (book) => set((state) => ({ myBooks: [book, ...state.myBooks] })),
+  updateBook: (bookId, updates) => set((state) => {
+    const updatedBooks = state.myBooks.map(b => 
+      b.id === bookId ? { ...b, ...updates } : b
+    );
+    const updatedCurrentBook = state.currentBook?.id === bookId 
+      ? { ...state.currentBook, ...updates } 
+      : state.currentBook;
+      
+    return {
+      myBooks: updatedBooks,
+      currentBook: updatedCurrentBook
+    };
+  }),
   updatePage: (pageId, updates) => set((state) => {
     if (!state.currentBook) return state;
     const updatedPages = state.currentBook.pages.map(p => 

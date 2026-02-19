@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ChevronLeft, ChevronRight, Image as ImageIcon, Volume2, Download, RefreshCw, Loader2, Sparkles } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Image as ImageIcon, Volume2, Download, RefreshCw, Loader2, Sparkles, Edit2, Save, X } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { generateIllustration, generateNarration } from '../lib/gemini';
 import { supabase } from '../lib/supabase';
@@ -9,14 +9,56 @@ import html2canvas from 'html2canvas';
 import { cn } from '../lib/utils';
 
 export const BookPreview = () => {
-  const { currentBook, updatePage, setLoading, isLoading } = useStore();
+  const { currentBook, updatePage, updateBook, setLoading, isLoading } = useStore();
   const [currentPage, setCurrentPage] = useState(0); // 0 is cover, 1+ are pages
   const [isGeneratingImg, setIsGeneratingImg] = useState(false);
   const [isNarrating, setIsNarrating] = useState(false);
   const [isBatchGenerating, setIsBatchGenerating] = useState(false);
   const [batchProgress, setBatchProgress] = useState(0);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editData, setEditData] = useState({
+    title: '',
+    targetAge: '',
+    theme: '',
+    moral: ''
+  });
+
+  useEffect(() => {
+    if (currentBook) {
+      setEditData({
+        title: currentBook.title,
+        targetAge: currentBook.targetAge,
+        theme: currentBook.theme,
+        moral: currentBook.moral
+      });
+    }
+  }, [currentBook]);
 
   if (!currentBook) return null;
+
+  const handleSaveEdit = async () => {
+    if (!currentBook) return;
+    try {
+      // Update local state
+      updateBook(currentBook.id, editData);
+      
+      // Update Supabase
+      const { error } = await supabase
+        .from('books')
+        .update({
+          title: editData.title,
+          target_age: editData.targetAge,
+          theme: editData.theme,
+          moral: editData.moral
+        })
+        .eq('id', currentBook.id);
+
+      if (error) throw error;
+      setIsEditing(false);
+    } catch (err: any) {
+      alert(`Gagal menyimpan perubahan: ${err.message}`);
+    }
+  };
 
   const totalPages = currentBook.pages.length;
 
@@ -205,9 +247,68 @@ export const BookPreview = () => {
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">{currentBook.title}</h1>
-          <p className="text-gray-500">Theme: {currentBook.theme} • Age: {currentBook.targetAge}</p>
+        <div className="flex-1 mr-8">
+          {isEditing ? (
+            <div className="space-y-4 bg-white p-6 rounded-2xl shadow-lg border border-indigo-100">
+              <div>
+                <label className="block text-xs font-bold text-gray-400 mb-1">Judul Cerita</label>
+                <input
+                  type="text"
+                  className="w-full p-2 border border-gray-200 rounded-lg font-bold text-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                  value={editData.title}
+                  onChange={(e) => setEditData({ ...editData, title: e.target.value })}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-400 mb-1">Tema</label>
+                  <input
+                    type="text"
+                    className="w-full p-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                    value={editData.theme}
+                    onChange={(e) => setEditData({ ...editData, theme: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-400 mb-1">Target Usia</label>
+                  <input
+                    type="text"
+                    className="w-full p-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                    value={editData.targetAge}
+                    onChange={(e) => setEditData({ ...editData, targetAge: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="flex gap-2 justify-end pt-2">
+                <button
+                  onClick={() => setIsEditing(false)}
+                  className="px-4 py-2 text-gray-500 hover:bg-gray-100 rounded-lg text-sm font-bold flex items-center gap-1"
+                >
+                  <X size={16} /> Batal
+                </button>
+                <button
+                  onClick={handleSaveEdit}
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-bold hover:bg-indigo-700 flex items-center gap-1"
+                >
+                  <Save size={16} /> Simpan
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="group relative">
+              <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+                {currentBook.title}
+                <button 
+                  onClick={() => setIsEditing(true)}
+                  className="opacity-0 group-hover:opacity-100 p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-all"
+                  title="Edit Detail Cerita"
+                >
+                  <Edit2 size={18} />
+                </button>
+              </h1>
+              <p className="text-gray-500">Theme: {currentBook.theme} • Age: {currentBook.targetAge}</p>
+            </div>
+          )}
         </div>
         <div className="flex gap-3">
           <button 
