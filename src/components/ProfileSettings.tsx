@@ -56,6 +56,16 @@ export const ProfileSettings = () => {
     setTimeout(() => setIsSaved(false), 3000);
   };
 
+  const checkDatabase = async () => {
+    try {
+      const { error } = await supabase.from('books').select('count', { count: 'exact', head: true });
+      if (error) throw error;
+      alert("Koneksi Database Berhasil! Tabel 'books' ditemukan.");
+    } catch (err: any) {
+      alert(`Koneksi Database Bermasalah: ${err.message}. Pastikan Anda sudah menjalankan script SQL di Supabase.`);
+    }
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'avatar' | 'logo') => {
     const file = e.target.files?.[0];
     if (file) {
@@ -73,9 +83,17 @@ export const ProfileSettings = () => {
 
   return (
     <div className="max-w-2xl mx-auto py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-black text-gray-900 mb-2">Pengaturan</h1>
-        <p className="text-gray-500">Kelola informasi profil dan identitas brand Anda</p>
+      <div className="mb-8 flex justify-between items-end">
+        <div>
+          <h1 className="text-3xl font-black text-gray-900 mb-2">Pengaturan</h1>
+          <p className="text-gray-500">Kelola informasi profil dan identitas brand Anda</p>
+        </div>
+        <button 
+          onClick={checkDatabase}
+          className="px-4 py-2 bg-gray-100 text-gray-600 rounded-xl text-sm font-bold hover:bg-gray-200 transition-all"
+        >
+          Cek Koneksi Database
+        </button>
       </div>
 
       {/* Tabs */}

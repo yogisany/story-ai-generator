@@ -66,8 +66,12 @@ export const generateStory = async (params: {
   });
 
   try {
-    const text = response.text;
+    let text = response.text;
     if (!text) throw new Error("AI returned empty response");
+    
+    // Remove markdown code blocks if present
+    text = text.replace(/```json\n?|\n?```/g, "").trim();
+    
     return JSON.parse(text);
   } catch (err) {
     console.error("Failed to parse AI response:", response.text);
