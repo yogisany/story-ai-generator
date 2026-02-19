@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { ChevronLeft, ChevronRight, Image as ImageIcon, Volume2, Download, RefreshCw, Loader2, Sparkles } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { generateIllustration, generateNarration } from '../lib/gemini';
+import { supabase } from '../lib/supabase';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 import { cn } from '../lib/utils';
@@ -64,9 +65,15 @@ export const BookPreview = () => {
       const url = await generateIllustration(page.illustrationPrompt);
       if (url) {
         updatePage(page.id, { illustrationUrl: url });
+        
+        // Save to Supabase
+        await supabase.from('pages').update({ illustration_url: url }).eq('id', page.id);
+      } else {
+        alert("Gagal membuat ilustrasi. Silakan coba lagi.");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      alert(`Gagal membuat ilustrasi: ${err.message}`);
     } finally {
       setIsGeneratingImg(false);
     }
