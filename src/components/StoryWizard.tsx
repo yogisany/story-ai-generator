@@ -17,7 +17,7 @@ export const StoryWizard = ({ onComplete }: { onComplete: () => void }) => {
     pages: 8
   });
   
-  const { setLoading, setCurrentBook, setError, isLoading, user } = useStore();
+  const { setLoading, setCurrentBook, setError, isLoading, user, error } = useStore();
 
   const handleNext = () => setStep(s => s + 1);
   const handleBack = () => setStep(s => s - 1);
@@ -35,6 +35,10 @@ export const StoryWizard = ({ onComplete }: { onComplete: () => void }) => {
         pages: formData.pages
       });
 
+      if (!storyData || !storyData.title) {
+        throw new Error("Gagal mendapatkan data cerita dari AI.");
+      }
+
       // 1. Save Book to Supabase
       const { data: book, error: bookError } = await supabase
         .from('books')
@@ -50,12 +54,20 @@ export const StoryWizard = ({ onComplete }: { onComplete: () => void }) => {
         .select()
         .single();
 
-      if (bookError) throw bookError;
+      if (bookError) {
+        console.error("Supabase Book Error:", bookError);
+        throw new Error(`Gagal menyimpan buku: ${bookError.message}. Pastikan tabel 'books' sudah dibuat di Supabase.`);
+      }
 
-      // 2. Generate Cover (Optional, can be done after insert)
-      const coverUrl = await generateIllustration(storyData.coverPrompt);
-      if (coverUrl) {
-        await supabase.from('books').update({ cover_url: coverUrl }).eq('id', book.id);
+      // 2. Generate Cover (Optional)
+      let coverUrl = null;
+      try {
+        coverUrl = await generateIllustration(storyData.coverPrompt);
+        if (coverUrl) {
+          await supabase.from('books').update({ cover_url: coverUrl }).eq('id', book.id);
+        }
+      } catch (imgErr) {
+        console.warn("Failed to generate cover image:", imgErr);
       }
 
       // 3. Save Pages to Supabase
@@ -71,7 +83,10 @@ export const StoryWizard = ({ onComplete }: { onComplete: () => void }) => {
         .insert(pagesToInsert)
         .select();
 
-      if (pagesError) throw pagesError;
+      if (pagesError) {
+        console.error("Supabase Pages Error:", pagesError);
+        throw new Error(`Gagal menyimpan halaman: ${pagesError.message}`);
+      }
 
       const fullBook = {
         ...book,
@@ -85,8 +100,8 @@ export const StoryWizard = ({ onComplete }: { onComplete: () => void }) => {
       setCurrentBook(fullBook);
       onComplete();
     } catch (err: any) {
-      setError(err.message || "Failed to generate story. Please try again.");
-      console.error(err);
+      console.error("Generation Error:", err);
+      setError(err.message || "Terjadi kesalahan saat membuat cerita. Silakan coba lagi.");
     } finally {
       setLoading(false);
     }

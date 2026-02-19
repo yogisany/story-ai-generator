@@ -37,7 +37,7 @@ export const generateStory = async (params: {
   Each illustrationPrompt MUST start with a reference to the characterDescription.`;
 
   const response = await ai.models.generateContent({
-    model: "gemini-3-pro-preview",
+    model: "gemini-3-flash-preview",
     contents: prompt,
     config: {
       responseMimeType: "application/json",
@@ -65,7 +65,14 @@ export const generateStory = async (params: {
     },
   });
 
-  return JSON.parse(response.text || "{}");
+  try {
+    const text = response.text;
+    if (!text) throw new Error("AI returned empty response");
+    return JSON.parse(text);
+  } catch (err) {
+    console.error("Failed to parse AI response:", response.text);
+    throw new Error("Gagal memproses format cerita dari AI. Silakan coba lagi.");
+  }
 };
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
