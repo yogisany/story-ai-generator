@@ -1,0 +1,7 @@
+{
+  "name": "Kids Storybook Creator AI",
+  "description": "An AI-powered platform to create, illustrate, and narrate personalized children's storybooks.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
