@@ -79,11 +79,17 @@ export const BookPreview = () => {
         const url = await generateIllustration(page.illustrationPrompt);
         if (url) {
           updatePage(page.id, { illustrationUrl: url });
+          // Save to Supabase
+          await supabase.from('pages').update({ illustration_url: url }).eq('id', page.id);
         }
-        // Small delay between successful generations to avoid hitting rate limits too fast
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      } catch (err) {
+        // Increased delay to 3 seconds to avoid rate limits
+        await new Promise(resolve => setTimeout(resolve, 3000));
+      } catch (err: any) {
         console.error(`Failed to generate image for page ${page.pageNumber}:`, err);
+        if (err.message?.includes("429") || err.message?.includes("quota")) {
+          alert("Limit API tercapai (Rate Limit). Pembuatan gambar otomatis dihentikan sementara. Silakan coba lagi dalam beberapa menit.");
+          break; // Stop batch if rate limited
+        }
       }
       completed++;
       setBatchProgress(Math.round((completed / pagesToGenerate.length) * 100));

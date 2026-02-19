@@ -88,12 +88,22 @@ export const StoryWizard = ({ onComplete }: { onComplete: () => void }) => {
         throw new Error(`Gagal menyimpan halaman: ${pagesError.message}`);
       }
 
-      const fullBook = {
-        ...book,
-        coverUrl,
+      const fullBook: any = {
+        id: book.id,
+        title: book.title,
+        theme: book.theme,
+        targetAge: book.target_age,
+        moral: book.moral,
+        coverUrl: coverUrl,
+        coverPrompt: book.cover_prompt,
+        characterDescription: book.character_description,
         pages: pages.map((p: any) => ({
-          ...p,
-          illustrationUrl: null
+          id: p.id,
+          pageNumber: p.page_number,
+          content: p.content,
+          illustrationUrl: p.illustration_url || null,
+          illustrationPrompt: p.illustration_prompt,
+          narrationUrl: p.narration_url || null
         }))
       };
 

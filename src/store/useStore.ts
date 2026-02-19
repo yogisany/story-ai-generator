@@ -122,7 +122,27 @@ export const useStore = create<StoryState>((set, get) => ({
         .order('created_at', { ascending: false });
 
       if (booksError) throw booksError;
-      set({ myBooks: books || [] });
+      
+      const mappedBooks: Book[] = (books || []).map((b: any) => ({
+        id: b.id,
+        title: b.title,
+        theme: b.theme,
+        targetAge: b.target_age,
+        moral: b.moral,
+        coverUrl: b.cover_url,
+        coverPrompt: b.cover_prompt,
+        characterDescription: b.character_description,
+        pages: (b.pages || []).map((p: any) => ({
+          id: p.id,
+          pageNumber: p.page_number,
+          content: p.content,
+          illustrationUrl: p.illustration_url,
+          illustrationPrompt: p.illustration_prompt,
+          narrationUrl: p.narration_url
+        })).sort((p1: any, p2: any) => p1.pageNumber - p2.pageNumber)
+      }));
+
+      set({ myBooks: mappedBooks });
     } catch (err: any) {
       set({ error: err.message });
     } finally {
