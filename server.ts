@@ -69,6 +69,12 @@ async function startServer() {
 
   app.use(express.json());
 
+  // Logging middleware for API requests
+  app.use("/api", (req, res, next) => {
+    console.log(`[API] ${req.method} ${req.url}`);
+    next();
+  });
+
   // API Routes
   app.get("/api/health", (req, res) => {
     res.json({ status: "ok" });

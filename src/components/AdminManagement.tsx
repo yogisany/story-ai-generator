@@ -100,7 +100,9 @@ export const AdminManagement = () => {
         } else {
           const text = await response.text();
           console.error("Server returned non-JSON response:", text);
-          throw new Error('Server tidak merespon dengan benar. Pastikan SUPABASE_SERVICE_ROLE_KEY sudah dikonfigurasi.');
+          // Show a bit of the response text to help debugging
+          const preview = text.substring(0, 100).replace(/<[^>]*>/g, '');
+          throw new Error(`Server tidak merespon dengan JSON. Status: ${response.status}. Pesan: ${preview}...`);
         }
 
         if (!response.ok) throw new Error(result.error || 'Gagal membuat admin');
