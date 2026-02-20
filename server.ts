@@ -13,11 +13,23 @@ const __dirname = path.dirname(__filename);
 
 const db = new Database("storybook.db");
 
-// Supabase Admin Client
-const supabaseAdmin = createClient(
-  process.env.VITE_SUPABASE_URL || "",
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ""
-);
+// Supabase Admin Client (Lazy initialization to avoid crash if env vars are missing at startup)
+let supabaseAdmin: any = null;
+
+const getSupabaseAdmin = () => {
+  if (supabaseAdmin) return supabaseAdmin;
+  
+  const url = process.env.VITE_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  
+  if (!url || !key) {
+    console.error("Missing Supabase Admin configuration:", { hasUrl: !!url, hasKey: !!key });
+    return null;
+  }
+  
+  supabaseAdmin = createClient(url, key);
+  return supabaseAdmin;
+};
 
 // Initialize Database
 db.exec(`
@@ -118,15 +130,20 @@ async function startServer() {
 
   // Admin: Create User without Sign Up
   app.post("/api/admin/create-user", async (req, res) => {
+    console.log("Received admin user creation request:", req.body.email);
     const { email, password, name, role } = req.body;
     
-    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      return res.status(500).json({ error: "SUPABASE_SERVICE_ROLE_KEY is not configured on the server." });
+    const adminClient = getSupabaseAdmin();
+    if (!adminClient) {
+      console.error("Failed to initialize Supabase Admin client. Check environment variables.");
+      return res.status(500).json({ 
+        error: "Server configuration error: SUPABASE_SERVICE_ROLE_KEY or VITE_SUPABASE_URL is missing." 
+      });
     }
 
     try {
       // 1. Create user in Supabase Auth
-      const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+      const { data: authData, error: authError } = await adminClient.auth.admin.createUser({
         email,
         password,
         email_confirm: true,
@@ -136,10 +153,13 @@ async function startServer() {
         }
       });
 
-      if (authError) throw authError;
+      if (authError) {
+        console.error("Supabase Auth Error:", authError);
+        throw authError;
+      }
 
       // 2. Create profile in profiles table
-      const { error: profileError } = await supabaseAdmin
+      const { error: profileError } = await adminClient
         .from('profiles')
         .insert({
           id: authData.user.id,
@@ -148,12 +168,16 @@ async function startServer() {
           role: role || 'admin'
         });
 
-      if (profileError) throw profileError;
+      if (profileError) {
+        console.error("Supabase Profile Error:", profileError);
+        throw profileError;
+      }
 
+      console.log("Admin user created successfully:", email);
       res.json({ success: true, user: authData.user });
     } catch (error: any) {
-      console.error("Admin user creation error:", error);
-      res.status(500).json({ error: error.message });
+      console.error("Admin user creation error detail:", error);
+      res.status(500).json({ error: error.message || "Internal Server Error" });
     }
   });
 
