@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { UserPlus, Shield, Trash2, Edit2, Search, Loader2, CheckCircle2, X, Mail, User as UserIcon } from 'lucide-react';
+import { UserPlus, Shield, Trash2, Edit2, Search, Loader2, CheckCircle2, X, Mail, User as UserIcon, Lock } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { cn } from '../lib/utils';
 
@@ -22,6 +22,7 @@ export const AdminManagement = () => {
   const [formData, setFormData] = useState({
     email: '',
     name: '',
+    password: '',
     role: 'admin'
   });
 
@@ -32,16 +33,17 @@ export const AdminManagement = () => {
   const fetchAdmins = async () => {
     setIsLoading(true);
     try {
-      // In a real app, we'd fetch from a profiles table
+      // Fetch all profiles to allow promoting users to admin
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
+        .order('role', { ascending: true })
         .order('full_name');
 
       if (error) throw error;
       setAdmins(data || []);
     } catch (err: any) {
-      console.error('Error fetching admins:', err.message);
+      console.error('Error fetching users:', err.message);
     } finally {
       setIsLoading(false);
     }
@@ -65,10 +67,10 @@ export const AdminManagement = () => {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Note: Creating a new user in Supabase Auth from client is not possible without service role.
-    // This UI will focus on updating existing profiles or managing roles.
+    setIsLoading(true);
     try {
       if (editingAdmin) {
+        // Update existing profile
         const { error } = await supabase
           .from('profiles')
           .update({
@@ -79,17 +81,31 @@ export const AdminManagement = () => {
 
         if (error) throw error;
       } else {
-        // For "Add New", we'd typically send an invite or create a record
-        // Since we can't create Auth users, we'll show a message
-        alert("Untuk menambah admin baru, admin tersebut harus mendaftar terlebih dahulu, lalu Anda dapat mengubah rolenya di sini.");
-        return;
+        // Create new admin directly via backend API
+        const response = await fetch('/api/admin/create-user', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: formData.email,
+            password: formData.password,
+            name: formData.name,
+            role: formData.role
+          })
+        });
+
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Gagal membuat admin');
+        
+        alert(`Admin ${formData.name} berhasil dibuat!`);
       }
 
-      fetchAdmins();
+      await fetchAdmins();
       setIsModalOpen(false);
       setEditingAdmin(null);
     } catch (err: any) {
       alert(`Gagal menyimpan: ${err.message}`);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -108,7 +124,7 @@ export const AdminManagement = () => {
         <button 
           onClick={() => {
             setEditingAdmin(null);
-            setFormData({ email: '', name: '', role: 'admin' });
+            setFormData({ email: '', name: '', password: '', role: 'admin' });
             setIsModalOpen(true);
           }}
           className="px-6 py-3 bg-indigo-600 text-white rounded-2xl font-bold flex items-center gap-2 hover:bg-indigo-700 shadow-lg shadow-indigo-100 transition-all"
@@ -188,7 +204,7 @@ export const AdminManagement = () => {
                       <button 
                         onClick={() => {
                           setEditingAdmin(admin);
-                          setFormData({ email: admin.email, name: admin.full_name, role: admin.role });
+                          setFormData({ email: admin.email, name: admin.full_name, password: '', role: admin.role });
                           setIsModalOpen(true);
                         }}
                         className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
@@ -230,6 +246,14 @@ export const AdminManagement = () => {
                   </button>
                 </div>
 
+                {!editingAdmin && (
+                  <div className="mb-6 p-4 bg-indigo-50 rounded-2xl border border-indigo-100">
+                    <p className="text-xs text-indigo-700 leading-relaxed">
+                      <strong>Info:</strong> Anda dapat membuat akun admin baru secara langsung. Masukkan email dan password yang akan digunakan oleh admin tersebut untuk login.
+                    </p>
+                  </div>
+                )}
+
                 <form onSubmit={handleSave} className="space-y-4">
                   <div>
                     <label className="block text-xs font-bold text-gray-400 mb-1 ml-1 uppercase tracking-wider">Nama Lengkap</label>
@@ -247,20 +271,36 @@ export const AdminManagement = () => {
                   </div>
 
                   {!editingAdmin && (
-                    <div>
-                      <label className="block text-xs font-bold text-gray-400 mb-1 ml-1 uppercase tracking-wider">Email</label>
-                      <div className="relative">
-                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                        <input
-                          type="email"
-                          className="w-full pl-12 pr-4 py-3 rounded-2xl border border-gray-100 focus:ring-2 focus:ring-indigo-500 outline-none transition-all bg-gray-50/50"
-                          placeholder="email@example.com"
-                          value={formData.email}
-                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                          required
-                        />
+                    <>
+                      <div>
+                        <label className="block text-xs font-bold text-gray-400 mb-1 ml-1 uppercase tracking-wider">Email</label>
+                        <div className="relative">
+                          <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                          <input
+                            type="email"
+                            className="w-full pl-12 pr-4 py-3 rounded-2xl border border-gray-100 focus:ring-2 focus:ring-indigo-500 outline-none transition-all bg-gray-50/50"
+                            placeholder="email@example.com"
+                            value={formData.email}
+                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                            required
+                          />
+                        </div>
                       </div>
-                    </div>
+                      <div>
+                        <label className="block text-xs font-bold text-gray-400 mb-1 ml-1 uppercase tracking-wider">Password</label>
+                        <div className="relative">
+                          <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                          <input
+                            type="password"
+                            className="w-full pl-12 pr-4 py-3 rounded-2xl border border-gray-100 focus:ring-2 focus:ring-indigo-500 outline-none transition-all bg-gray-50/50"
+                            placeholder="••••••••"
+                            value={formData.password}
+                            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                            required={!editingAdmin}
+                          />
+                        </div>
+                      </div>
+                    </>
                   )}
 
                   <div>

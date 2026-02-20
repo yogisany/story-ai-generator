@@ -44,6 +44,7 @@ export const ProfileSettings = () => {
       if (user) {
         await supabase.from('profiles').update({
           full_name: profileData.name,
+          email: profileData.email,
           phone_number: profileData.phoneNumber,
           avatar_url: profileData.avatarUrl
           // We don't update role here to prevent users from escalating their own privileges

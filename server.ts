@@ -3,11 +3,21 @@ import { createServer as createViteServer } from "vite";
 import Database from "better-sqlite3";
 import path from "path";
 import { fileURLToPath } from "url";
+import { createClient } from "@supabase/supabase-js";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const db = new Database("storybook.db");
+
+// Supabase Admin Client
+const supabaseAdmin = createClient(
+  process.env.VITE_SUPABASE_URL || "",
+  process.env.SUPABASE_SERVICE_ROLE_KEY || ""
+);
 
 // Initialize Database
 db.exec(`
@@ -103,6 +113,47 @@ async function startServer() {
       res.json(pages);
     } catch (error) {
       res.status(500).json({ error: (error as Error).message });
+    }
+  });
+
+  // Admin: Create User without Sign Up
+  app.post("/api/admin/create-user", async (req, res) => {
+    const { email, password, name, role } = req.body;
+    
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return res.status(500).json({ error: "SUPABASE_SERVICE_ROLE_KEY is not configured on the server." });
+    }
+
+    try {
+      // 1. Create user in Supabase Auth
+      const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: {
+          full_name: name,
+          role: role || 'admin'
+        }
+      });
+
+      if (authError) throw authError;
+
+      // 2. Create profile in profiles table
+      const { error: profileError } = await supabaseAdmin
+        .from('profiles')
+        .insert({
+          id: authData.user.id,
+          full_name: name,
+          email: email,
+          role: role || 'admin'
+        });
+
+      if (profileError) throw profileError;
+
+      res.json({ success: true, user: authData.user });
+    } catch (error: any) {
+      console.error("Admin user creation error:", error);
+      res.status(500).json({ error: error.message });
     }
   });
 
