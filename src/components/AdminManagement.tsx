@@ -93,7 +93,16 @@ export const AdminManagement = () => {
           })
         });
 
-        const result = await response.json();
+        let result;
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.indexOf("application/json") !== -1) {
+          result = await response.json();
+        } else {
+          const text = await response.text();
+          console.error("Server returned non-JSON response:", text);
+          throw new Error('Server tidak merespon dengan benar. Pastikan SUPABASE_SERVICE_ROLE_KEY sudah dikonfigurasi.');
+        }
+
         if (!response.ok) throw new Error(result.error || 'Gagal membuat admin');
         
         alert(`Admin ${formData.name} berhasil dibuat!`);
