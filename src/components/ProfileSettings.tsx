@@ -39,6 +39,15 @@ export const ProfileSettings = () => {
       });
       if (error) throw error;
 
+      // Also update the profiles table if user exists
+      if (user) {
+        await supabase.from('profiles').update({
+          full_name: profileData.name,
+          phone_number: profileData.phoneNumber,
+          avatar_url: profileData.avatarUrl
+        }).eq('id', user.id);
+      }
+
       updateUser(profileData);
       setIsSaved(true);
       setTimeout(() => setIsSaved(false), 3000);

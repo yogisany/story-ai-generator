@@ -39,7 +39,8 @@ export default function App() {
           email: session.user.email || '',
           role: userRole,
           credits: userRole === 'admin' ? 9999 : 10,
-          avatarUrl: session.user.user_metadata?.avatar_url
+          avatarUrl: session.user.user_metadata?.avatar_url,
+          phoneNumber: session.user.user_metadata?.phone || session.user.user_metadata?.phone_number
         });
       }
     });
@@ -54,7 +55,8 @@ export default function App() {
           email: session.user.email || '',
           role: userRole,
           credits: userRole === 'admin' ? 9999 : 10,
-          avatarUrl: session.user.user_metadata?.avatar_url
+          avatarUrl: session.user.user_metadata?.avatar_url,
+          phoneNumber: session.user.user_metadata?.phone || session.user.user_metadata?.phone_number
         });
       } else {
         setUser(null);
