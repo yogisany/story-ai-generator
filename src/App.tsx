@@ -5,17 +5,18 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { BookOpen, Plus, Library, Sparkles, LogOut, Settings as SettingsIcon, User as UserIcon } from 'lucide-react';
+import { BookOpen, Plus, Library, Sparkles, LogOut, Settings as SettingsIcon, User as UserIcon, ShieldCheck } from 'lucide-react';
 import { useStore } from './store/useStore';
 import { StoryWizard } from './components/StoryWizard';
 import { BookPreview } from './components/BookPreview';
 import { Login } from './components/Login';
 import { ProfileSettings } from './components/ProfileSettings';
+import { AdminManagement } from './components/AdminManagement';
 import { cn } from './lib/utils';
 import { supabase } from './lib/supabase';
 
 export default function App() {
-  const [view, setView] = useState<'dashboard' | 'wizard' | 'preview' | 'settings'>('dashboard');
+  const [view, setView] = useState<'dashboard' | 'wizard' | 'preview' | 'settings' | 'admins'>('dashboard');
   const { currentBook, myBooks, user, setUser, brandSettings, fetchBooks, fetchBrandSettings } = useStore();
 
   useEffect(() => {
@@ -135,6 +136,17 @@ export default function App() {
           >
             <SettingsIcon size={20} /> Pengaturan
           </button>
+          {user.role === 'admin' && (
+            <button 
+              onClick={() => setView('admins')}
+              className={cn(
+                "w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all",
+                view === 'admins' ? "bg-indigo-50 text-indigo-600" : "text-gray-500 hover:bg-gray-50"
+              )}
+            >
+              <ShieldCheck size={20} /> Manajemen Admin
+            </button>
+          )}
         </nav>
 
         <div className="mt-auto pt-6 border-t border-gray-100">
@@ -277,6 +289,16 @@ export default function App() {
               exit={{ opacity: 0, x: -20 }}
             >
               <ProfileSettings />
+            </motion.div>
+          )}
+          {view === 'admins' && (
+            <motion.div
+              key="admins"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+            >
+              <AdminManagement />
             </motion.div>
           )}
         </AnimatePresence>

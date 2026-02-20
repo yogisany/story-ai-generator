@@ -6,7 +6,7 @@ import { supabase } from '../lib/supabase';
 
 export const Login = () => {
   const [isLogin, setIsLogin] = useState(true);
-  const [role, setRole] = useState<'admin' | 'user'>('user');
+  const [role] = useState<'admin' | 'user'>('admin');
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     username: '',
@@ -98,31 +98,8 @@ export const Login = () => {
           </div>
           <h1 className="text-2xl font-black text-gray-900 mb-1">{brandSettings.name} <span className="text-indigo-600">{brandSettings.tagline}</span></h1>
           <p className="text-gray-500 text-sm">
-            {isLogin ? 'Masuk ke akun Anda' : 'Buat akun baru Anda'}
+            Masuk ke Panel Admin
           </p>
-        </div>
-
-        {/* Role Toggle */}
-        <div className="flex p-1 bg-gray-100 rounded-2xl mb-8">
-          <button
-            onClick={() => setRole('user')}
-            className={`flex-1 py-2 rounded-xl text-sm font-bold transition-all ${
-              role === 'user' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500'
-            }`}
-          >
-            User
-          </button>
-          <button
-            onClick={() => {
-              setRole('admin');
-              setIsLogin(true);
-            }}
-            className={`flex-1 py-2 rounded-xl text-sm font-bold transition-all ${
-              role === 'admin' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500'
-            }`}
-          >
-            Admin
-          </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -138,26 +115,6 @@ export const Login = () => {
               </motion.div>
             )}
           </AnimatePresence>
-
-          {!isLogin && (
-            <motion.div
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-            >
-              <label className="block text-xs font-bold text-gray-400 mb-1 ml-1 uppercase tracking-wider">Nama Lengkap</label>
-              <div className="relative">
-                <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                <input
-                  type="text"
-                  className="w-full pl-12 pr-4 py-3 rounded-2xl border border-gray-100 focus:ring-2 focus:ring-indigo-500 outline-none transition-all bg-gray-50/50"
-                  placeholder="Nama Lengkap"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
-                />
-              </div>
-            </motion.div>
-          )}
 
           <div>
             <label className="block text-xs font-bold text-gray-400 mb-1 ml-1 uppercase tracking-wider">Email</label>
@@ -198,23 +155,12 @@ export const Login = () => {
               <Loader2 className="animate-spin" size={24} />
             ) : (
               <>
-                {isLogin ? 'Masuk Sekarang' : 'Daftar Sekarang'}
+                Masuk Sekarang
                 <ArrowRight size={20} />
               </>
             )}
           </button>
         </form>
-
-        {role === 'user' && (
-          <div className="mt-8 text-center">
-            <button 
-              onClick={() => setIsLogin(!isLogin)}
-              className="text-sm font-bold text-indigo-600 hover:text-indigo-700 transition-all"
-            >
-              {isLogin ? 'Belum punya akun? Daftar di sini' : 'Sudah punya akun? Masuk di sini'}
-            </button>
-          </div>
-        )}
 
         <div className="mt-8 text-center text-[10px] text-gray-400 uppercase tracking-widest">
           <p>© 2026 {brandSettings.name} • SDN Cimahi Mandiri 3</p>
