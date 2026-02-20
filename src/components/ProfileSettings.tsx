@@ -34,7 +34,8 @@ export const ProfileSettings = () => {
         data: { 
           full_name: profileData.name,
           phone: profileData.phoneNumber,
-          avatar_url: profileData.avatarUrl
+          avatar_url: profileData.avatarUrl,
+          role: user?.role // Preserve the current role in metadata
         }
       });
       if (error) throw error;
@@ -45,6 +46,7 @@ export const ProfileSettings = () => {
           full_name: profileData.name,
           phone_number: profileData.phoneNumber,
           avatar_url: profileData.avatarUrl
+          // We don't update role here to prevent users from escalating their own privileges
         }).eq('id', user.id);
       }
 

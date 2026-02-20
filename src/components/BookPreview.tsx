@@ -285,6 +285,14 @@ export const BookPreview = () => {
                   />
                 </div>
               </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-400 mb-1">Pesan Moral</label>
+                <textarea
+                  className="w-full p-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none min-h-[80px]"
+                  value={editData.moral}
+                  onChange={(e) => setEditData({ ...editData, moral: e.target.value })}
+                />
+              </div>
               <div className="flex gap-2 justify-end pt-2">
                 <button
                   onClick={() => setIsEditing(false)}

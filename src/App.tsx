@@ -30,14 +30,23 @@ export default function App() {
 
   useEffect(() => {
     // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error) {
+        console.error("Session error:", error.message);
+        if (error.message.includes("refresh_token_not_found") || error.message.includes("Refresh Token Not Found")) {
+          supabase.auth.signOut();
+          setUser(null);
+        }
+        return;
+      }
+      
       if (session?.user) {
         const userRole = session.user.user_metadata?.role || 'user';
         setUser({
           id: session.user.id,
           name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'User',
           email: session.user.email || '',
-          role: userRole,
+          role: userRole as 'admin' | 'user',
           credits: userRole === 'admin' ? 9999 : 10,
           avatarUrl: session.user.user_metadata?.avatar_url,
           phoneNumber: session.user.user_metadata?.phone || session.user.user_metadata?.phone_number
@@ -46,14 +55,18 @@ export default function App() {
     });
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT') {
+        setUser(null);
+      }
+
       if (session?.user) {
         const userRole = session.user.user_metadata?.role || 'user';
         setUser({
           id: session.user.id,
           name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'User',
           email: session.user.email || '',
-          role: userRole,
+          role: userRole as 'admin' | 'user',
           credits: userRole === 'admin' ? 9999 : 10,
           avatarUrl: session.user.user_metadata?.avatar_url,
           phoneNumber: session.user.user_metadata?.phone || session.user.user_metadata?.phone_number
